@@ -1,0 +1,50 @@
+name: Yii2 CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the code
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      # Set up PHP
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
+
+      # Install Composer dependencies
+      - name: Install dependencies
+        run: |
+          curl -sS https://getcomposer.org/installer | php
+          php composer.phar install --no-interaction
+
+      # Run tests (example using Codeception for Yii2)
+      - name: Run Tests
+        run: |
+          ./vendor/bin/codecept run
+
+      # Build the Docker Image
+      - name: Build Docker Image
+        run: |
+          docker build -t pavanadusumalli3/yii2-app:latest .
+
+      # Push Docker Image to Docker Hub (You need to create a Docker Hub Account & set up credentials)
+      - name: Push Docker Image
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        run: |
+          echo $DOCKER_PASSWORD | docker login --username $DOCKER_USERNAME --password-stdin
+          docker push pavanadusumalli3/yii2-app:latest
+
